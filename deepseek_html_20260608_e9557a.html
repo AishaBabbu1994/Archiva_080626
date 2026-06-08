@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>TTS Interactivo · Palabras clickeables + Todas las voces</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(145deg, #0a0e1a 0%, #1a1f2e 100%);
+      font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+
+    .app-container {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    /* Panel de controles */
+    .controls-card {
+      background: rgba(30, 35, 48, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 1.5rem;
+      padding: 1rem 1.5rem;
+      border: 1px solid rgba(255, 200, 100, 0.2);
+    }
+
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 14px;
+      border-radius: 40px;
+    }
+
+    .control-group label {
+      color: #ffdd99;
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+
+    select, input[type="range"], input[type="number"] {
+      background: #2a2f3f;
+      border: 1px solid #ffb347;
+      border-radius: 30px;
+      padding: 6px 12px;
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    input[type="range"] {
+      width: 120px;
+    }
+
+    .value-display {
+      background: #2a2f3f;
+      padding: 4px 10px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      color: #ffb347;
+      min-width: 45px;
+      text-align: center;
+    }
+
+    .btn {
+      border: none;
+      padding: 8px 18px;
+      border-radius: 40px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+    }
+
+    .btn-primary {
+      background: #2c7a47;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #1f5f37;
+      transform: scale(0.97);
+    }
+
+    .btn-secondary {
+      background: #b56532;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background: #9a4e28;
+    }
+
+    .btn-outline {
+      background: #3a4055;
+      color: #ffdd99;
+      border: 1px solid #ffb347;
+    }
+    .btn-outline:hover {
+      background: #4a5068;
+    }
+
+    /* Área del texto */
+    .text-card {
+      background: #0f111a;
+      border-radius: 1.5rem;
+      overflow: hidden;
+      border: 1px solid #2a2f3f;
+    }
+
+    .text-toolbar {
+      background: #1a1e2c;
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #2a2f3f;
+    }
+
+    .text-toolbar span {
+      color: #ffdd99;
+      font-size: 0.8rem;
+    }
+
+    .text-container {
+      padding: 2rem;
+      max-height: 450px;
+      overflow-y: auto;
+      background: #0a0c12;
+      line-height: 1.8;
+    }
+
+    /* Palabras interactivas */
+    .word {
+      display: inline-block;
+      margin: 4px 3px;
+      padding: 6px 10px;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      background: #1e2438;
+      color: #e0e0e0;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .word:hover {
+      background: #ffb347 !important;
+      color: #1a1a2e !important;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(255, 180, 70, 0.4);
+    }
+
+    .word.active {
+      background: #ff8c42 !important;
+      color: white !important;
+      transform: scale(1.03);
+      box-shadow: 0 0 15px rgba(255, 140, 66, 0.6);
+    }
+
+    .reading-status {
+      background: #1a1e2c;
+      padding: 0.6rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      color: #aaa;
+      font-size: 0.75rem;
+      border-top: 1px solid #2a2f3f;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .editor-card {
+      background: #1a1e2c;
+      border-radius: 1.5rem;
+      padding: 1rem;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      background: #0f111a;
+      border: 1px solid #3a4055;
+      border-radius: 1rem;
+      padding: 1rem;
+      color: #e0e0e0;
+      font-family: monospace;
+      resize: vertical;
+      font-size: 0.9rem;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 1rem;
+      color: #555;
+      font-size: 0.7rem;
+    }
+
+    @media (max-width: 700px) {
+      .word { font-size: 0.85rem; padding: 3px 6px; margin: 2px; }
+      .text-container { padding: 1rem; }
+      .controls-row { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <!-- Panel de controles mejorado -->
+  <div class="controls-card">
+    <div class="controls-row">
+      <div class="control-group">
+        <span>🗣️ Voz / Idioma:</span>
+        <select id="voiceSelect" style="min-width: 180px;"></select>
+        <button id="reloadVoicesBtn" class="btn-outline" style="padding: 4px 10px;">🔄</button>
+      </div>
+      <div class="control-group"><span>⚡ Velocidad:</span><input type="range" id="rateSlider" min="0.5" max="2.0" step="0.05" value="1.0"><span id="rateValue" class="value-display">1.0x</span></div>
+      <div class="control-group"><span>🎵 Tono:</span><input type="range" id="pitchSlider" min="0.5" max="2.0" step="0.05" value="1.0"><span id="pitchValue" class="value-display">1.0</span></div>
+      <div class="control-group"><span>🔄 Repetir:</span><input type="number" id="repeatTime" value="0" step="0.5" min="0" style="width:70px"><select id="repeatUnit"><option value="seconds">seg</option><option value="minutes">min</option></select><span style="font-size:0.7rem;">(0=infinito)</span></div>
+      <div class="control-group"><button id="stopBtn" class="btn-secondary">⏹ Parar</button></div>
+    </div>
+  </div>
+
+  <!-- Área de texto interactivo -->
+  <div class="text-card">
+    <div class="text-toolbar">
+      <span>✨ Palabras interactivas — Pasa el ratón por encima y haz clic para leer desde ahí</span>
+      <span id="readingIndicator" style="color:#ffb347;">⚡ En espera</span>
+    </div>
+    <div id="textContainer" class="text-container">
+      <div style="text-align:center; color:#666; padding:2rem;">✏️ Escribe o pega un texto abajo y haz clic en cualquier palabra para leer desde ese punto</div>
+    </div>
+    <div class="reading-status">
+      <span>📖 <span id="wordCounter">0 palabras</span></span>
+      <span id="repeatStatus">🔁 Repetición: inactiva</span>
+      <span id="timerInfo">⏱️ 0.0s</span>
+    </div>
+  </div>
+
+  <!-- Editor -->
+  <div class="editor-card">
+    <textarea id="ttsText">🌟 ¡Bienvenido al Lector Interactivo con todas las voces!
+Pasa el ratón por encima de cualquier palabra y verás cómo se ilumina.
+Haz clic en una palabra y el TTS comenzará a leer DESDE ESA PALABRA exactamente.
+Puedes cambiar la voz y el idioma en el panel superior.
+Además, repite la lectura durante minutos o infinito.
+¡Perfecto para aprender idiomas o seguir la lectura a tu ritmo!</textarea>
+  </div>
+  <div class="footer">💡 Haz clic en CUALQUIER palabra para leer desde ahí · Pasa el ratón por encima para iluminar · Repetición ajustable · Todas las voces del sistema</div>
+</div>
+
+<script>
+  (function() {
+    // Elementos DOM
+    const textarea = document.getElementById('ttsText');
+    const rateSlider = document.getElementById('rateSlider');
+    const rateValue = document.getElementById('rateValue');
+    const pitchSlider = document.getElementById('pitchSlider');
+    const pitchValue = document.getElementById('pitchValue');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const reloadVoicesBtn = document.getElementById('reloadVoicesBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const repeatTimeInput = document.getElementById('repeatTime');
+    const repeatUnit = document.getElementById('repeatUnit');
+    const repeatStatusSpan = document.getElementById('repeatStatus');
+    const timerInfoSpan = document.getElementById('timerInfo');
+    const wordCounterSpan = document.getElementById('wordCounter');
+    const textContainer = document.getElementById('textContainer');
+    const readingIndicator = document.getElementById('readingIndicator');
+
+    // Estado
+    let speechSynth = window.speechSynthesis;
+    let currentUtterance = null;
+    let isSpeaking = false;
+    let stopRequested = false;
+    let globalStopTimer = null;
+    let updateTimerInterval = null;
+    let loopStartTime = 0;
+    let repeatDurationMs = 0;
+    
+    let wordsArray = [];        // Array de palabras (strings)
+    let wordsElements = [];     // Array de elementos span
+    let currentWordIndex = -1;
+    let fullOriginalText = "";
+    
+    // Almacenar las voces disponibles
+    let availableVoices = [];
+
+    // Función para cargar voces en el select
+    function loadVoices() {
+      const voices = speechSynth.getVoices();
+      if (!voices.length) {
+        // Si no hay voces, reintentar en 200ms
+        setTimeout(loadVoices, 200);
+        return;
+      }
+      availableVoices = voices;
+      const selectedValue = voiceSelect.value;
+      voiceSelect.innerHTML = '';
+      voices.forEach((voice, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `${voice.name} (${voice.lang}) ${voice.default ? '⭐' : ''}`;
+        if (selectedValue && parseInt(selectedValue) === index) {
+          option.selected = true;
+        } else if (!selectedValue && voice.default) {
+          option.selected = true;
+        }
+        voiceSelect.appendChild(option);
+      });
+      // Si no había ninguna seleccionada y hay voces, seleccionar la primera
+      if (voiceSelect.options.length > 0 && !voiceSelect.value) {
+        voiceSelect.selectedIndex = 0;
+      }
+    }
+
+    // Forzar recarga de voces (a veces el navegador las carga tarde)
+    function refreshVoices() {
+      if (speechSynth.getVoices().length > 0) {
+        loadVoices();
+      } else {
+        // Si aún no están, esperar el evento onvoiceschanged
+        speechSynth.onvoiceschanged = () => {
+          loadVoices();
+          speechSynth.onvoiceschanged = null;
+        };
+        // También intentar recargar manualmente
+        setTimeout(loadVoices, 300);
+      }
+    }
+
+    // Cargar inicialmente
+    refreshVoices();
+    reloadVoicesBtn.addEventListener('click', () => refreshVoices());
+
+    function getSelectedVoice() {
+      if (!availableVoices.length || !voiceSelect.value) return null;
+      const idx = parseInt(voiceSelect.value);
+      return availableVoices[idx] || null;
+    }
+
+    // UI updates
+    rateSlider.addEventListener('input', () => rateValue.innerText = rateSlider.value + 'x');
+    pitchSlider.addEventListener('input', () => pitchValue.innerText = pitchSlider.value);
+
+    function getRepeatTotalMs() {
+      let val = parseFloat(repeatTimeInput.value);
+      if (isNaN(val)) val = 0;
+      return repeatUnit.value === 'minutes' ? val * 60 * 1000 : val * 1000;
+    }
+
+    // Dividir texto en palabras (conservando espacios para el render, pero para TTS usamos array de palabras)
+    function splitWordsAndSpaces(text) {
+      return text.match(/\S+|\s+/g) || [];
+    }
+    
+    function splitWordsOnly(text) {
+      return text.match(/\S+/g) || [];
+    }
+    
+    function clearActiveHighlight() {
+      wordsElements.forEach(el => el.classList.remove('active'));
+    }
+    
+    function highlightWord(index) {
+      clearActiveHighlight();
+      if (index >= 0 && index < wordsElements.length) {
+        wordsElements[index].classList.add('active');
+        wordsElements[index].scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      }
+    }
+    
+    // Renderizar texto clickeable
+    function renderText(text) {
+      if (!text.trim()) {
+        textContainer.innerHTML = '<div style="text-align:center; color:#666; padding:2rem;">✏️ Escribe o pega un texto en el área de abajo</div>';
+        wordsArray = [];
+        wordsElements = [];
+        wordCounterSpan.innerText = '0 palabras';
+        return;
+      }
+      
+      const tokens = splitWordsAndSpaces(text);
+      wordsArray = splitWordsOnly(text); // solo palabras para el TTS
+      
+      const container = document.createElement('div');
+      let wordCounter = 0;
+      const newElements = [];
+      
+      tokens.forEach(token => {
+        if (token.trim() === '') {
+          container.appendChild(document.createTextNode(token));
+        } else {
+          const span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = token;
+          span.setAttribute('data-word-idx', wordCounter);
+          span.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt(span.getAttribute('data-word-idx'));
+            if (!isNaN(idx)) startReadingFromWord(idx);
+          });
+          container.appendChild(span);
+          newElements.push(span);
+          wordCounter++;
+        }
+      });
+      
+      textContainer.innerHTML = '';
+      textContainer.appendChild(container);
+      wordsElements = newElements;
+      wordCounterSpan.innerText = `${wordsArray.length} palabras`;
+    }
+    
+    function clearLoopMechanism() {
+      if (globalStopTimer) { clearTimeout(globalStopTimer); globalStopTimer = null; }
+      if (updateTimerInterval) { clearInterval(updateTimerInterval); updateTimerInterval = null; }
+    }
+    
+    function fullStop() {
+      stopRequested = true;
+      if (speechSynth.speaking || speechSynth.pending) speechSynth.cancel();
+      if (currentUtterance) {
+        currentUtterance.onend = null;
+        currentUtterance.onboundary = null;
+        currentUtterance.onerror = null;
+        currentUtterance = null;
+      }
+      isSpeaking = false;
+      clearLoopMechanism();
+      clearActiveHighlight();
+      currentWordIndex = -1;
+      readingIndicator.innerHTML = '⏹️ Detenido';
+      readingIndicator.style.color = '#ff8888';
+      stopRequested = false;
+    }
+    
+    // Leer desde una palabra específica con repetición
+    function startReadingFromWord(startWordIdx) {
+      if (startWordIdx < 0 || startWordIdx >= wordsArray.length) return;
+      
+      fullStop();
+      
+      const textToSpeak = wordsArray.slice(startWordIdx).join(' ');
+      if (!textToSpeak) return;
+      
+      currentWordIndex = startWordIdx;
+      highlightWord(currentWordIndex);
+      
+      stopRequested = false;
+      const totalLoopMs = getRepeatTotalMs();
+      const isInfinite = (totalLoopMs === 0);
+      repeatDurationMs = totalLoopMs;
+      loopStartTime = Date.now();
+      
+      readingIndicator.innerHTML = `🔊 Leyendo desde "${wordsArray[startWordIdx]}"`;
+      readingIndicator.style.color = '#aaffaa';
+      
+      function updateTimerDisplay() {
+        if (!isSpeaking && !globalStopTimer && !speechSynth.speaking) {
+          if (updateTimerInterval) clearInterval(updateTimerInterval);
+          return;
+        }
+        const elapsed = Date.now() - loopStartTime;
+        if (!isInfinite) {
+          const remaining = Math.max(0, totalLoopMs - elapsed);
+          timerInfoSpan.innerText = `⏱️ ${(elapsed/1000).toFixed(1)}s / restan ${(remaining/1000).toFixed(1)}s`;
+          if (remaining <= 0 && !stopRequested) fullStop();
+        } else {
+          timerInfoSpan.innerText = `♾️ infinito · ${(elapsed/1000).toFixed(1)}s`;
+        }
+      }
+      
+      if (updateTimerInterval) clearInterval(updateTimerInterval);
+      updateTimerInterval = setInterval(updateTimerDisplay, 200);
+      
+      if (!isInfinite) {
+        globalStopTimer = setTimeout(() => { if (!stopRequested) fullStop(); }, totalLoopMs);
+        repeatStatusSpan.innerText = `🔁 Repitiendo ${repeatTimeInput.value} ${repeatUnit.value}`;
+      } else {
+        repeatStatusSpan.innerText = `🔁 Repetición INFINITA`;
+      }
+      
+      // Función recursiva para repetir el bloque desde startWordIdx
+      const speakIteration = () => {
+        if (stopRequested) return;
+        const elapsedGlobal = Date.now() - loopStartTime;
+        if (!isInfinite && elapsedGlobal >= repeatDurationMs) return;
+        
+        const iterationText = wordsArray.slice(startWordIdx).join(' ');
+        const utterance = new SpeechSynthesisUtterance(iterationText);
+        utterance.rate = parseFloat(rateSlider.value);
+        utterance.pitch = parseFloat(pitchSlider.value);
+        const voice = getSelectedVoice();
+        if (voice) utterance.voice = voice;
+        
+        let localWordPointer = 0;
+        
+        utterance.onboundary = (event) => {
+          if (event.name === 'word' && event.charIndex !== undefined && !stopRequested) {
+            const textBefore = iterationText.substring(0, event.charIndex);
+            const wordsBefore = textBefore.match(/\S+/g) || [];
+            let localIdx = wordsBefore.length;
+            if (localIdx >= wordsArray.length - startWordIdx) localIdx = wordsArray.length - startWordIdx - 1;
+            if (localIdx < 0) localIdx = 0;
+            const absoluteIdx = startWordIdx + localIdx;
+            if (absoluteIdx !== currentWordIndex) {
+              currentWordIndex = absoluteIdx;
+              highlightWord(currentWordIndex);
+            }
+          }
+        };
+        
+        utterance.onend = () => {
+          if (stopRequested) return;
+          const nowElapsed = Date.now() - loopStartTime;
+          if (isInfinite || nowElapsed < repeatDurationMs) {
+            if (!stopRequested) speakIteration();
+          } else {
+            fullStop();
+          }
+        };
+        
+        utterance.onerror = () => fullStop();
+        
+        currentUtterance = utterance;
+        isSpeaking = true;
+        speechSynth.speak(utterance);
+      };
+      
+      speakIteration();
+    }
+    
+    // Cuando cambia el texto, re-renderizar
+    function onTextChange() {
+      fullOriginalText = textarea.value;
+      renderText(fullOriginalText);
+    }
+    textarea.addEventListener('input', onTextChange);
+    
+    stopBtn.addEventListener('click', () => {
+      fullStop();
+      repeatStatusSpan.innerText = '⏹️ Detenido';
+      timerInfoSpan.innerText = '⏱️ 0.0s';
+      readingIndicator.innerHTML = '⏹️ Detenido';
+    });
+    
+    // Inicializar
+    onTextChange();
+    
+    // Asegurar que el selector de voces funcione incluso si las voces cambian dinámicamente
+    if (speechSynth.onvoiceschanged !== undefined) {
+      speechSynth.onvoiceschanged = () => {
+        loadVoices();
+      };
+    }
+  })();
+</script>
+</body>
+</html>
